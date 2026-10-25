@@ -207,7 +207,53 @@
       }
     }
 
-    function renderAdverts() {
+    function renderAdverts() {function filterAdverts() {
+  const searchInput = document.getElementById("searchInput");
+  const categoryFilter = document.getElementById("categoryFilter");
+  const searchText = searchInput.value.toLowerCase().trim();
+  const selectedCategory = categoryFilter.value;
+
+  const adverts = getAdverts();
+  const filteredAdverts = adverts.filter(ad => {
+    const title = (ad.title || "").toLowerCase();
+    const description = (ad.description || "").toLowerCase();
+    const category = ad.category || "";
+
+    const matchesSearch =
+      title.includes(searchText) ||
+      description.includes(searchText);
+
+    const matchesCategory =
+      !selectedCategory || category === selectedCategory;
+
+    return matchesSearch && matchesCategory;
+  });
+
+  const adList = document.getElementById("adList");
+  adList.innerHTML = "";
+
+  filteredAdverts.forEach(ad => {
+    const card = document.createElement("div");
+    card.style.cssText =
+      "padding:15px;margin:10px 0;border:1px solid #ddd;border-radius:10px;";
+
+    const title = document.createElement("h3");
+    title.textContent = ad.title || "Untitled advert";
+
+    const description = document.createElement("p");
+    description.textContent = ad.description || "";
+
+    const category = document.createElement("p");
+    category.textContent = "Category: " + (ad.category || "Other");
+
+    card.append(title, description, category);
+    adList.appendChild(card);
+  });
+
+  if (filteredAdverts.length === 0) {
+    adList.textContent = "No adverts found.";
+  }
+}
       const adverts = getAdverts();
       list.replaceChildren();
 
