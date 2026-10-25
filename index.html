@@ -204,10 +204,7 @@
         return JSON.parse(localStorage.getItem(storageKey) || "[]");
       } catch {
         return [];
-      }
-    }
-
-    function renderAdverts() {function filterAdverts() {
+      function renderAdverts() {
   const searchInput = document.getElementById("searchInput");
   const categoryFilter = document.getElementById("categoryFilter");
   const searchText = searchInput.value.toLowerCase().trim();
