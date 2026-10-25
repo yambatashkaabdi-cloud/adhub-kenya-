@@ -121,6 +121,30 @@
 
     <section id="adverts">
       <h2>Latest Adverts</h2>
+<div style="margin:20px 0;">
+  <input
+    type="search"
+    id="searchInput"
+    placeholder="Search adverts..."
+    oninput="filterAdverts()"
+    style="width:100%;padding:12px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box;"
+  >
+
+  <select
+    id="categoryFilter"
+    onchange="filterAdverts()"
+    style="width:100%;padding:12px;margin-top:10px;border:1px solid #ccc;border-radius:8px;"
+  >
+    <option value="">All Categories</option>
+    <option value="Electronics & Phones">Electronics & Phones</option>
+    <option value="Electronics & Computers">Electronics & Computers</option>
+    <option value="Property & Rentals">Property & Rentals</option>
+    <option value="Jobs">Jobs</option>
+    <option value="Vehicles">Vehicles</option>
+    <option value="Fashion & Clothing">Fashion & Clothing</option>
+    <option value="Services">Services</option>
+  </select>
+</div>
       <div id="adList">
         <p class="empty">No adverts yet. Be the first to post!</p>
       </div>
