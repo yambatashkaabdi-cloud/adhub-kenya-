@@ -285,13 +285,29 @@
           price.className = "price";
           price.textContent = "KSh " + Number(ad.price).toLocaleString("en-KE");
           card.appendChild(price);
-        }
+       
+if (ad.contact) {
+  const contact = document.createElement("p");
+  contact.textContent = "Contact: " + ad.contact;
+  card.appendChild(contact);
 
-        if (ad.contact) {
-          const contact = document.createElement("p");
-          contact.textContent = "Contact: " + ad.contact;
-          card.appendChild(contact);
-        }
+  const contactButton = document.createElement("a");
+  contactButton.textContent = "Contact Seller";
+  contactButton.className = "contact";
+  contactButton.href = "https://wa.me/" +
+    ad.contact.replace(/\D/g, "").replace(/^0/, "254");
+  contactButton.target = "_blank";
+  contactButton.rel = "noopener noreferrer";
+  contactButton.style.display = "inline-block";
+  contactButton.style.padding = "10px 15px";
+  contactButton.style.marginTop = "8px";
+  contactButton.style.backgroundColor = "#128C7E";
+  contactButton.style.color = "white";
+  contactButton.style.borderRadius = "8px";
+  contactButton.style.textDecoration = "none";
+
+  card.appendChild(contactButton);
+}
 
         list.appendChild(card);
       });
