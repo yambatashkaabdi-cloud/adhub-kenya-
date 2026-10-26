@@ -246,13 +246,6 @@
     card.append(title, description, category);
     adList.appendChild(card);
   });
-if (ad.featured === true) {
-  const badge = document.createElement("p");
-  badge.textContent = "⭐ FEATURED ADVERT";
-  badge.style.color = "#d97706";
-  badge.style.fontWeight = "bold";
-  card.appendChild(badge);
-}
 
   if (filteredAdverts.length === 0) {
     adList.textContent = "No adverts found.";
