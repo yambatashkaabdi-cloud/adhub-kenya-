@@ -285,11 +285,6 @@
           price.className = "price";
           price.textContent = "KSh " + Number(ad.price).toLocaleString("en-KE");
           card.appendChild(price);
-       
-if (ad.contact) {
-  const contact = document.createElement("p");
-  contact.textContent = "Contact: " + ad.contact;
-  card.appendChild(contact);
 
   const contactButton = document.createElement("a");
   contactButton.textContent = "Contact Seller";
