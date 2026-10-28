@@ -257,6 +257,24 @@ function renderAdverts() {
 
 $("adForm").addEventListener("submit", async function(e) {
   e.preventDefault();
+const title = $("title").value.trim();
+const description = $("description").value.trim();
+const phone = $("phone").value.trim();
+
+if (!title || !description) {
+  alert("Please enter an advert title and description.");
+  return;
+}
+
+if (title.length > 100 || description.length > 1000) {
+  alert("Title must be under 100 characters and description under 1000.");
+  return;
+}
+
+if (phone && !/^[0-9+\s()-]{7,20}$/.test(phone)) {
+  alert("Please enter a valid contact number.");
+  return;
+}
 
   const button = $("adForm").querySelector('button[type="submit"]');
   button.disabled = true;
