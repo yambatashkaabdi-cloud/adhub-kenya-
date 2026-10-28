@@ -147,130 +147,225 @@ Prototype — be alert for scams and protect your personal information.
 </footer>
 
 <script>
+
+const SUPABASE_URL = "https://ukltlatilcgjofagkahm.supabase.co";
+const SUPABASE_KEY = "sb_publishable_xtEEEj2AYJvij013AKLQAw_md1gfSs2";
+
 const STORAGE_KEY = "adhub-kenya-adverts-v1";
 const REQUEST_KEY = "adhub-kenya-feature-requests-v1";
 const $ = id => document.getElementById(id);
-let selectedCategory = "";
 
-function getAdverts(){
-  try{
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-    return Array.isArray(data) ? data : [];
-  }catch(e){ return []; }
-}
-function saveAdverts(items){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-}
-function safe(value){
+let selectedCategory = "";
+let allAdverts = [];
+
+function safe(value) {
   return String(value ?? "").replace(/[&<>"']/g, c => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    "&": "&amp;", "<": "&lt;", ">": "&gt;",
+    '"': "&quot;", "'": "&#39;"
   }[c]));
 }
-function normalise(ad){
+
+function normalise(ad) {
   return {
-    title:ad.title || ad.name || "Untitled advert",
-    category:ad.category || "Other",
-    price:ad.price ?? "",
-    town:ad.town || ad.location || ad.city || "",
-    phone:ad.phone || ad.whatsapp || ad.contact || "",
-    description:ad.description || ad.details || "",
-    featured:!!ad.featured,
-    createdAt:ad.createdAt || ad.date || ""
+    id: ad.id,
+    title: ad.title || "Untitled advert",
+    category: ad.category || "Other",
+    price: ad.price ?? "",
+    town: ad.town || "",
+    phone: ad.contact || "",
+    description: ad.description || "",
+    featured: !!ad.featured,
+    createdAt: ad.created_at || ""
   };
 }
-function renderAdverts(){
+
+async function loadAdverts() {
+  $("count").textContent = "Loading adverts…";
+
+  try {
+    const response = await fetch(
+      SUPABASE_URL + "/rest/v1/Adverts?select=*&order=created_at.desc",
+      {
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: "Bearer " + SUPABASE_KEY
+        }
+      }
+    );
+
+    if (!response.ok) throw new Error("Could not load adverts");
+
+    allAdverts = (await response.json()).map(normalise);
+    renderAdverts();
+  } catch (error) {
+    $("count").textContent = "Could not load adverts. Check your connection.";
+    $("adList").innerHTML =
+      '<div class="panel empty">Please refresh the page and try again.</div>';
+  }
+}
+
+function renderAdverts() {
   const search = $("search").value.trim().toLowerCase();
   const category = $("filterCategory").value || selectedCategory;
-  const adverts = getAdverts().map(normalise).filter(ad => {
-    const text = [ad.title,ad.category,ad.town,ad.description].join(" ").toLowerCase();
-    return text.includes(search) && (!category || ad.category === category);
+
+  const adverts = allAdverts.filter(ad => {
+    const text = [
+      ad.title, ad.category, ad.town, ad.description
+    ].join(" ").toLowerCase();
+
+    return text.includes(search) &&
+      (!category || ad.category === category);
   });
-  $("count").textContent = adverts.length + (adverts.length === 1 ? " advert" : " adverts");
+
+  $("count").textContent =
+    adverts.length + (adverts.length === 1 ? " advert" : " adverts");
+
   $("adList").innerHTML = "";
-  if(!adverts.length){
-    $("adList").innerHTML = '<div class="panel empty" style="grid-column:1/-1"><b>No adverts found yet.</b><br>Be the first to post, or try another search/category.</div>';
+
+  if (!adverts.length) {
+    $("adList").innerHTML =
+      '<div class="panel empty" style="grid-column:1/-1">' +
+      '<b>No adverts found yet.</b><br>' +
+      'Be the first to post, or try another search/category.</div>';
     return;
   }
+
   adverts.forEach(ad => {
     const card = document.createElement("article");
     card.className = "ad";
-    const digits = String(ad.phone).replace(/\D/g,"");
-    let wa = digits;
-    if(wa.startsWith("0")) wa = "254" + wa.slice(1);
-    const contact = wa ? '<a class="btn" target="_blank" rel="noopener" href="https://wa.me/'+encodeURIComponent(wa)+'">Contact seller</a>' : "";
+
+    let wa = String(ad.phone || "").replace(/\D/g, "");
+    if (wa.startsWith("0")) wa = "254" + wa.slice(1);
+
+    const contact = wa
+      ? '<a class="btn" target="_blank" rel="noopener" href="https://wa.me/' +
+        encodeURIComponent(wa) + '">Contact seller</a>'
+      : "";
+
     card.innerHTML =
-      (ad.featured ? '<span class="tag">⭐ FEATURED</span><br>' : '') +
-      '<p class="small">'+safe(ad.category)+' • '+safe(ad.town)+'</p>' +
-      '<h3>'+safe(ad.title)+'</h3>' +
-      '<div class="price">'+(ad.price !== "" ? 'KSh '+safe(ad.price) : 'Price negotiable')+'</div>' +
-      '<p>'+safe(ad.description)+'</p>' + contact;
+      (ad.featured ? '<span class="tag">⭐ FEATURED</span><br>' : "") +
+      '<p class="small">' + safe(ad.category) + ' • ' +
+      safe(ad.town) + '</p>' +
+      '<h3>' + safe(ad.title) + '</h3>' +
+      '<div class="price">' +
+      (ad.price !== "" ? "KSh " + safe(ad.price) : "Price negotiable") +
+      '</div><p>' + safe(ad.description) + '</p>' + contact;
+
     $("adList").appendChild(card);
   });
 }
-$("adForm").addEventListener("submit", function(e){
+
+$("adForm").addEventListener("submit", async function(e) {
   e.preventDefault();
+
+  const button = $("adForm").querySelector('button[type="submit"]');
+  button.disabled = true;
+  button.textContent = "Publishing…";
+  $("formMessage").textContent = "";
+
   const ad = {
-    id:Date.now().toString(),
-    title:$("title").value.trim(),
-    category:$("category").value,
-    price:$("price").value.trim(),
-    town:$("town").value.trim(),
-    phone:$("phone").value.trim(),
-    description:$("description").value.trim(),
-    featured:false,
-    createdAt:new Date().toISOString()
+    title: $("title").value.trim(),
+    category: $("category").value,
+    price: $("price").value.trim(),
+    town: $("town").value.trim(),
+    contact: $("phone").value.trim(),
+    description: $("description").value.trim()
   };
-  try{
-    const adverts = getAdverts();
-    adverts.unshift(ad);
-    saveAdverts(adverts);
-    $("formMessage").textContent = "Advert saved in this browser.";
+
+  try {
+    const response = await fetch(SUPABASE_URL + "/rest/v1/Adverts", {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: "Bearer " + SUPABASE_KEY,
+        "Content-Type": "application/json",
+        Prefer: "return=representation"
+      },
+      body: JSON.stringify(ad)
+    });
+
+    if (!response.ok) {
+      const details = await response.text();
+      throw new Error(details);
+    }
+
+    $("formMessage").textContent = "Advert published successfully!";
     $("adForm").reset();
     selectedCategory = "";
     $("filterCategory").value = "";
-    renderAdverts();
-    $("ads").scrollIntoView({behavior:"smooth"});
-  }catch(err){
-    $("formMessage").textContent = "Could not save. Your browser storage may be full.";
+    await loadAdverts();
+    $("ads").scrollIntoView({ behavior: "smooth" });
+  } catch (error) {
+    $("formMessage").textContent =
+      "Publishing failed. Check your Supabase columns and permissions, then try again.";
+  } finally {
+    button.disabled = false;
+    button.textContent = "Publish advert";
   }
 });
-$("search").addEventListener("input",renderAdverts);
-$("filterCategory").addEventListener("change",function(){
+
+$("search").addEventListener("input", renderAdverts);
+
+$("filterCategory").addEventListener("change", function() {
   selectedCategory = this.value;
-  document.querySelectorAll("[data-cat]").forEach(b=>b.classList.toggle("active",b.dataset.cat===selectedCategory));
+  document.querySelectorAll("[data-cat]").forEach(button => {
+    button.classList.toggle("active", button.dataset.cat === selectedCategory);
+  });
   renderAdverts();
 });
-document.querySelectorAll("[data-cat]").forEach(button=>{
-  button.addEventListener("click",()=>{
+
+document.querySelectorAll("[data-cat]").forEach(button => {
+  button.addEventListener("click", () => {
     selectedCategory = button.dataset.cat;
     $("filterCategory").value = selectedCategory;
-    document.querySelectorAll("[data-cat]").forEach(b=>b.classList.toggle("active",b===button));
+
+    document.querySelectorAll("[data-cat]").forEach(b => {
+      b.classList.toggle("active", b === button);
+    });
+
     renderAdverts();
   });
 });
-$("featureBtn").addEventListener("click",()=>{
-  const adverts = getAdverts();
-  if(!adverts.length){
-    $("featureMessage").textContent = "Post an advert first, then request promotion.";
+
+$("featureBtn").addEventListener("click", () => {
+  if (!allAdverts.length) {
+    $("featureMessage").textContent = "Post an advert first.";
     return;
   }
-  const title = prompt("Enter the exact title of the advert you want to promote:");
-  if(!title) return;
-  const found = adverts.find(a => (a.title || a.name || "").toLowerCase() === title.trim().toLowerCase());
-  if(!found){
-    $("featureMessage").textContent = "Advert title not found. Check the exact title.";
+
+  const title = prompt("Enter the exact title of the advert to promote:");
+  if (!title) return;
+
+  const found = allAdverts.find(ad =>
+    ad.title.toLowerCase() === title.trim().toLowerCase()
+  );
+
+  if (!found) {
+    $("featureMessage").textContent = "Advert title not found.";
     return;
   }
-  try{
-    const requests = JSON.parse(localStorage.getItem(REQUEST_KEY) || "[]");
-    requests.push({title:title.trim(),requestedAt:new Date().toISOString(),status:"pending"});
-    localStorage.setItem(REQUEST_KEY,JSON.stringify(requests));
-    $("featureMessage").textContent = "Request saved on this device only. No payment was taken and no admin was notified.";
-  }catch(e){
-    $("featureMessage").textContent = "Could not save the request in this browser.";
+
+  try {
+    const requests = JSON.parse(
+      localStorage.getItem(REQUEST_KEY) || "[]"
+    );
+
+    requests.push({
+      title: title.trim(),
+      requestedAt: new Date().toISOString(),
+      status: "pending"
+    });
+
+    localStorage.setItem(REQUEST_KEY, JSON.stringify(requests));
+    $("featureMessage").textContent =
+      "Request saved on this device. No payment was taken.";
+  } catch (error) {
+    $("featureMessage").textContent = "Could not save your request.";
   }
 });
-renderAdverts();
+
+loadAdverts();
+
 </script>
 </body>
 </html>
