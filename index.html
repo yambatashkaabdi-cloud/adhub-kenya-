@@ -108,6 +108,10 @@ footer{text-align:center;margin-top:35px;font-size:12px}
 <div><label for="town">Town / location *</label><input id="town" required placeholder="e.g. Rongai, Nairobi"></div>
 <div style="grid-column:1/-1"><label for="phone">WhatsApp number *</label><input id="phone" required inputmode="tel" placeholder="e.g. 0712345678"><p class="small">Use a number you are comfortable sharing publicly.</p></div>
 <div style="grid-column:1/-1"><label for="description">Description *</label><textarea id="description" required maxlength="1000" placeholder="Describe the item, service, condition or other useful details."></textarea></div>
+<div style="grid-column:1/-1">
+  <label for="photo">Advert photo (JPG, max 5 MB)</label>
+  <input id="photo" type="file" accept="image/jpeg">
+</div>
 </div>
 <p><label style="font-weight:normal"><input id="confirm" type="checkbox" required style="width:auto"> I confirm this advert is accurate and does not share someone else's private information.</label></p>
 <button type="submit">Publish advert</button>
