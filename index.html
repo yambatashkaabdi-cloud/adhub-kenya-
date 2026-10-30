@@ -295,6 +295,39 @@ if (phone && !/^[0-9+\s()-]{7,20}$/.test(phone)) {
   };
 
   try {
+const photoFile = $("photo").files[0];
+let photoUrl = null;
+
+if (photoFile) {
+  if (photoFile.size > 5 * 1024 * 1024) {
+    throw new Error("Photo must be 5 MB or smaller.");
+  }
+
+  if (photoFile.type !== "image/jpeg") {
+    throw new Error("Please select a JPG photo.");
+  }
+
+  const photoName = crypto.randomUUID() + ".jpg";
+  const photoPath = "public/" + photoName;
+
+  const upload = await fetch(
+    SUPABASE_URL + "/storage/v1/object/advert-photos/" + photoPath,
+    {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: "Bearer " + SUPABASE_KEY,
+        "Content-Type": "image/jpeg"
+      },
+      body: photoFile
+    }
+  );
+
+  if (!upload.ok) throw new Error(await upload.text());
+
+  photoUrl = SUPABASE_URL +
+    "/storage/v1/object/public/advert-photos/" + photoPath;
+}
     const response = await fetch(SUPABASE_URL + "/rest/v1/Adverts", {
       method: "POST",
       headers: {
