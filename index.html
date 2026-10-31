@@ -327,8 +327,8 @@ SUPABASE_URL + "/storage/v1/object/advert-photos/" + photoPath,
         Authorization: "Bearer " + SUPABASE_KEY,
         "Content-Type": "image/jpeg"
       },
-      body: photoFile
-    }
+      signal: controller.signal,
+body: photoFile
   );
 
   if (!upload.ok) throw new Error(await upload.text());
