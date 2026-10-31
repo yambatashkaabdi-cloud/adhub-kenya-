@@ -197,8 +197,11 @@ async function loadAdverts() {
       }
     );
 
-    if (!response.ok) throw new Error("Could not load adverts");
-
+    
+if (!upload.ok) {
+  const errorText = await upload.text();
+  throw new Error("Photo upload failed: " + errorText);
+}
     allAdverts = (await response.json()).map(normalise);
     renderAdverts();
   } catch (error) {
