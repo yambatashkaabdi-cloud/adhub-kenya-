@@ -330,6 +330,7 @@ SUPABASE_URL + "/storage/v1/object/advert-photos/" + photoPath,
       signal: controller.signal,
 body: photoFile
   );
+clearTimeout(timeout);
 
   if (!upload.ok) throw new Error(await upload.text());
 
