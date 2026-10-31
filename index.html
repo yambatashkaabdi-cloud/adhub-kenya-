@@ -313,7 +313,9 @@ if (photoFile) {
   const photoName = crypto.randomUUID() + ".jpg";
   const photoPath = "public/" + photoName;
 
-  const upload = await fetch(
+  const controller = new AbortController();
+const timeout = setTimeout(() => controller.abort(), 30000);
+
     SUPABASE_URL + "/storage/v1/object/advert-photos/" + photoPath,
     {
       method: "POST",
