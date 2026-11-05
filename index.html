@@ -288,14 +288,6 @@ if (phone && !/^[0-9+\s()-]{7,20}$/.test(phone)) {
   button.textContent = "Publishing…";
   $("formMessage").textContent = "";
 
- let photoUrl = null; const ad = {
-    title: $("title").value.trim(),
-    category: $("category").value,
-    price: $("price").value.trim(),
-    town: $("town").value.trim(),
-    contact: $("phone").value.trim(),
-    description: $("description").value.trim(),photo_url: photoUrl
-  };
 
   try {
 const photoFile = $("photo").files[0];
@@ -337,7 +329,17 @@ clearTimeout(timeout);
   photoUrl = SUPABASE_URL +
     "/storage/v1/object/public/advert-photos/" + photoPath;
 }
-    const response = await fetch(SUPABASE_URL + "/rest/v1/Adverts", {
+let photoUrl = null;
+ const ad = {
+    title: $("title").value.trim(),
+    category: $("category").value,
+    price: $("price").value.trim(),
+    town: $("town").value.trim(),
+    contact: $("phone").value.trim(),
+    description: $("description").value.trim(),photo_url: photoUrl
+  }; 
+
+const response = await fetch(SUPABASE_URL + "/rest/v1/Adverts", {
       method: "POST",
       headers: {
         apikey: SUPABASE_KEY,
