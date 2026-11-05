@@ -287,8 +287,8 @@ if (phone && !/^[0-9+\s()-]{7,20}$/.test(phone)) {
   button.disabled = true;
   button.textContent = "Publishing…";
   $("formMessage").textContent = "";
-photoUrl = null
-  const ad = {
+
+ let photoUrl = null; const ad = {
     title: $("title").value.trim(),
     category: $("category").value,
     price: $("price").value.trim(),
