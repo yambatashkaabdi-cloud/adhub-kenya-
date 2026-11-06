@@ -352,6 +352,7 @@ const response = await fetch(SUPABASE_URL + "/rest/v1/Adverts", {
 
     if (!response.ok) {
       const details = await response.text();
+console.log("SUPABASE ERROR:", details);
       throw new Error(details);
     }
 
