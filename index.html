@@ -362,9 +362,8 @@ console.log("SUPABASE ERROR:", details);
     $("filterCategory").value = "";
     await loadAdverts();
     $("ads").scrollIntoView({ behavior: "smooth" });
-  } catch (error) {
-    $("formMessage").textContent =
-      "Publishing failed. Check your Supabase columns and permissions, then try again.";
+  $("formMessage").textContent =
+  "Publishing failed: " + (error.message || String(error));
   } finally {
     button.disabled = false;
     button.textContent = "Publish advert";
