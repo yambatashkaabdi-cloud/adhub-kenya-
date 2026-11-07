@@ -455,19 +455,6 @@ $("featureBtn").addEventListener("click", async () => {
     button.disabled = false;
   }
 });
-    $("featureMessage").textContent = "Post an advert first.";
-    return;
-  }
-
-  const title = prompt("Enter the exact title of the advert to promote:");
-  if (!title) return;
-
-  const found = allAdverts.find(ad =>
-    ad.title.toLowerCase() === title.trim().toLowerCase()
-  );
-
-  if (!found) {
-    
 
 loadAdverts();
 
