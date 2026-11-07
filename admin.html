@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AdHub Admin</title>
+<style>
+body{font-family:Arial;background:#f2f5f3;color:#17251d;margin:0}
+header{background:#173d2c;color:white;padding:18px}
+main{max-width:700px;margin:20px auto;padding:12px}
+.panel,.request{background:white;padding:16px;border-radius:12px;margin-bottom:14px}
+input{display:block;width:100%;box-sizing:border-box;padding:13px;margin:8px 0 15px;border:1px solid #bbb;border-radius:7px;font-size:16px}
+button{padding:12px;border:0;border-radius:7px;font-weight:bold;margin:5px;cursor:pointer}
+.primary,.approve{background:#176b45;color:white}
+.reject{background:#a52b2b;color:white}
+.secondary{background:#e5ebe7}
+.hidden{display:none}
+.small{font-size:13px;color:#53625a;line-height:1.5}
+.message{white-space:pre-wrap;overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<header><h2>AdHub Kenya — Admin</h2></header>
+<main>
+
+<section id="loginPanel" class="panel">
+<h3>Admin sign in</h3>
+<form id="loginForm">
+<label>Email</label>
+<input id="email" type="email" required>
+<label>Password</label>
+<input id="password" type="password" required>
+<button class="primary" type="submit">Sign in</button>
+</form>
+<p id="loginMessage" class="small message"></p>
+</section>
+
+<section id="dashboard" class="hidden">
+<div class="panel">
+<h3>Feature requests</h3>
+<p class="small">Verify the KSh 50 payment yourself before approving. Approval features the advert for 7 days. This dashboard does not collect payments.</p>
+<button id="refreshBtn" class="secondary">Refresh</button>
+<button id="logoutBtn" class="secondary">Log out</button>
+<p id="listMessage" class="small message"></p>
+</div>
+<div id="requests"></div>
+</section>
+
+</main>
+
+<script>
+const SUPABASE_URL = "https://ukltlatilcgjofagkahm.supabase.co";
+const SUPABASE_KEY = "sb_publishable_xtEEEj2AYJvij013AKLQAw_md1gfSs2";
+
+const $ = id => document.getElementById(id);
+let token = sessionStorage.getItem("adhub_admin_token") || "";
+
+function authHeaders() {
+  return {
+    apikey: SUPABASE_KEY,
+    Authorization: "Bearer " + token,
+    "Content-Type": "application/json"
+  };
+}
+
+async function signIn(email, password) {
+  const response = await fetch(
+    SUPABASE_URL + "/auth/v1/token?grant_type=password",
+    {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_KEY,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({email, password})
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.msg || data.message || "Sign in failed.");
+  }
+
+  const check = await fetch(
+    SUPABASE_URL + "/rest/v1/admin_users?select=user_id&user_id=eq." +
+    encodeURIComponent(data.user.id),
+    {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: "Bearer " + data.access_token
+      }
+    }
+  );
+
+  if (!check.ok) throw new Error(await check.text());
+
+  const admins = await check.json();
+
+  if (!admins.length) {
+    throw new Error("This account is not an administrator.");
+  }
+
+  token = data.access_token;
+  sessionStorage.setItem("adhub_admin_token", token);
+
+  $("loginPanel").classList.add("hidden");
+  $("dashboard").classList.remove("hidden");
+
+  await loadRequests();
+}
+
+async function loadRequests() {
+  $("listMessage").textContent = "Loading...";
+  $("requests").innerHTML = "";
+
+  try {
+    const url = SUPABASE_URL +
+      "/rest/v1/FeatureRequests?select=id,advert_id,requested_at,status,Adverts(title,town)" +
+      "&status=eq.pending&order=requested_at.desc";
+
+    const response = await fetch(url, {
+      headers: authHeaders()
+    });
+
+    if (!response.ok) throw new Error(await response.text());
+
+    const rows = await response.json();
+
+    if (!rows.length) {
+      $("listMessage").textContent = "No pending requests.";
+      return;
+    }
+
+    $("listMessage").textContent = rows.length + " pending request(s).";
+
+    rows.forEach(item => {
+      const advert = item.Adverts || {};
+      const card = document.createElement("div");
+      card.className = "request";
+
+      const heading = document.createElement("h3");
+      heading.textContent = advert.title || "Advert #" + item.advert_id;
+
+      const details = document.createElement("p");
+      details.className = "small";
+      details.textContent =
+        "Town: " + (advert.town || "Not provided") +
+        " | Advert ID: " + item.advert_id +
+        " | Requested: " +
+        (item.requested_at ? new Date(item.requested_at).toLocaleString() : "Unknown");
+
+      const approve = document.createElement("button");
+      approve.className = "approve";
+      approve.textContent = "Approve — 7 days";
+
+      const reject = document.createElement("button");
+      reject.className = "reject";
+      reject.textContent = "Reject";
+
+      approve.onclick = () => decide(item, "approved", approve, reject);
+      reject.onclick = () => decide(item, "rejected", reject, approve);
+
+      card.append(heading, details, approve, reject);
+      $("requests").append(card);
+    });
+
+  } catch (error) {
+    $("listMessage").textContent = "Error: " + error.message;
+  }
+}
+
+async function updateRow(table, filter, values) {
+  const response = await fetch(
+    SUPABASE_URL + "/rest/v1/" + table + "?" + filter,
+    {
+      method: "PATCH",
+      headers: {
+        ...authHeaders(),
+        Prefer: "return=representation"
+      },
+      body: JSON.stringify(values)
+    }
+  );
+
+  if (!response.ok) throw new Error(await response.text());
+
+  const rows = await response.json();
+  if (!rows.length) throw new Error("No row was updated.");
+}
+
+async function decide(item, decision, button, otherButton) {
+  const title = item.Adverts?.title || "this advert";
+
+  const question = decision === "approved"
+    ? "Have you verified payment for " + title + "? Approve it for 7 days?"
+    : "Reject the request for " + title + "?";
+
+  if (!confirm(question)) return;
+
+  button.disabled = true;
+  otherButton.disabled = true;
+
+  try {
+    if (decision === "approved") {
+      const expiry = new Date(
+        Date.now() + 7 * 24 * 60 * 60 * 1000
+      ).toISOString();
+
+      await updateRow(
+        "Adverts",
+        "id=eq." + encodeURIComponent(item.advert_id),
+        {
+          featured: true,
+          feature_expires_at: expiry
+        }
+      );
+    }
+
+    await updateRow(
+      "FeatureRequests",
+      "id=eq." + encodeURIComponent(item.id),
+      {status: decision}
+    );
+
+    $("listMessage").textContent = "Request " + decision + ".";
+    await loadRequests();
+
+  } catch (error) {
+    $("listMessage").textContent = "Action failed: " + error.message;
+    button.disabled = false;
+    otherButton.disabled = false;
+  }
+}
+
+$("loginForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  $("loginMessage").textContent = "Signing in...";
+
+  try {
+    await signIn($("email").value.trim(), $("password").value);
+    $("password").value = "";
+    $("loginMessage").textContent = "";
+  } catch (error) {
+    $("loginMessage").textContent = error.message;
+  }
+});
+
+$("refreshBtn").onclick = loadRequests;
+
+$("logoutBtn").onclick = async () => {
+  try {
+    if (token) {
+      await fetch(SUPABASE_URL + "/auth/v1/logout", {
+        method: "POST",
+        headers: authHeaders()
+      });
+    }
+  } finally {
+    sessionStorage.removeItem("adhub_admin_token");
+    token = "";
+    $("dashboard").classList.add("hidden");
+    $("loginPanel").classList.remove("hidden");
+    $("requests").innerHTML = "";
+    $("loginMessage").textContent = "Logged out.";
+  }
+};
+
+if (token) {
+  $("loginPanel").classList.add("hidden");
+  $("dashboard").classList.remove("hidden");
+  loadRequests();
+}
+</script>
+</body>
+</html>
