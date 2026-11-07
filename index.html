@@ -401,13 +401,14 @@ document.querySelectorAll("[data-cat]").forEach(button => {
   });
 });
 
+
 $("featureBtn").addEventListener("click", async () => {
   if (!allAdverts.length) {
     $("featureMessage").textContent = "Post an advert first.";
     return;
   }
 
-  const title = prompt("Enter the exact title of the advert to promote:");
+  const title = prompt("Enter the exact title of your advert:");
   if (!title) return;
 
   const found = allAdverts.find(ad =>
@@ -416,6 +417,16 @@ $("featureBtn").addEventListener("click", async () => {
 
   if (!found) {
     $("featureMessage").textContent = "Advert title not found.";
+    return;
+  }
+
+  const whatsapp = prompt("Enter your WhatsApp number (e.g. 0712345678):");
+  if (!whatsapp) return;
+
+  const cleanNumber = whatsapp.trim();
+
+  if (!/^[0-9+()\s-]{7,20}$/.test(cleanNumber)) {
+    $("featureMessage").textContent = "Enter a valid WhatsApp number.";
     return;
   }
 
@@ -435,7 +446,8 @@ $("featureBtn").addEventListener("click", async () => {
           Prefer: "return=minimal"
         },
         body: JSON.stringify({
-          advert_id: found.id
+          advert_id: found.id,
+          whatsapp_number: cleanNumber
         })
       }
     );
@@ -445,15 +457,16 @@ $("featureBtn").addEventListener("click", async () => {
     }
 
     $("featureMessage").textContent =
-      "Request submitted successfully! Awaiting manual review. No payment was taken.";
+      "Request submitted! AdHub Admin will contact you on WhatsApp with payment instructions. Featured adverts cost KSh 50 for 7 days. No payment has been taken.";
 
   } catch (error) {
     $("featureMessage").textContent =
       "Request failed: " + error.message;
- } finally {
+  } finally {
     button.disabled = false;
   }
 });
+
 
 loadAdverts();
 
