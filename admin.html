@@ -149,6 +149,10 @@ async function loadRequests() {
         " | Advert ID: " + item.advert_id +
         " | Requested: " +
         (item.requested_at ? new Date(item.requested_at).toLocaleString() : "Unknown");
+const whatsapp = document.createElement("p");
+whatsapp.className = "small";
+whatsapp.textContent = "Customer WhatsApp: " +
+  (item.whatsapp_number || "Not provided");
 
       const approve = document.createElement("button");
       approve.className = "approve";
