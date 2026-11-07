@@ -450,8 +450,7 @@ $("featureBtn").addEventListener("click", async () => {
   } catch (error) {
     $("featureMessage").textContent =
       "Request failed: " + error.message;
-
-  } finally {
+ } finally {
     button.disabled = false;
   }
 });
