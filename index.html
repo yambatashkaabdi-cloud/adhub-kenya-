@@ -261,111 +261,117 @@ function renderAdverts() {
 
 $("adForm").addEventListener("submit", async function(e) {
   e.preventDefault();
-const title = $("title").value.trim();
-const description = $("description").value.trim();
-const phone = $("phone").value.trim();
 
-if (!title || !description) {
-  alert("Please enter an advert title and description.");
-  return;
-}
+  const title = $("title").value.trim();
+  const description = $("description").value.trim();
+  const phone = $("phone").value.trim();
 
-if (title.length > 100 || description.length > 1000) {
-  alert("Title must be under 100 characters and description under 1000.");
-  return;
-}
+  if (!title || title.length > 80 || !description || description.length > 1000) {
+    $("formMessage").textContent =
+      "Enter a title (max 80 characters) and description (max 1000 characters).";
+    return;
+  }
 
-if (phone && !/^[0-9+\s()-]{7,20}$/.test(phone)) {
-  alert("Please enter a valid contact number.");
-  return;
-}
+  if (phone && !/^[0-9+\s()-]{7,20}$/.test(phone)) {
+    $("formMessage").textContent = "Please enter a valid contact number.";
+    return;
+  }
 
   const button = $("adForm").querySelector('button[type="submit"]');
   button.disabled = true;
-  button.textContent = "Publishing…";
-  $("formMessage").textContent = "";
-
+  button.textContent = "Publishing...";
+  $("formMessage").textContent = "Publishing your advert...";
 
   try {
-const photoFile = $("photo").files[0];
+    let photoUrl = null;
+    const photoFile = $("photo").files[0];
 
-if (photoFile) {
-  if (photoFile.size > 5 * 1024 * 1024) {
-    throw new Error("Photo must be 5 MB or smaller.");
-  }
+    if (photoFile) {
+      if (photoFile.size > 5 * 1024 * 1024) {
+        throw new Error("Photo must be 5 MB or smaller.");
+      }
 
-  if (photoFile.type !== "image/jpeg") {
-    throw new Error("Please select a JPG photo.");
-  }
+      if (photoFile.type !== "image/jpeg") {
+        throw new Error("Please select a JPG photo.");
+      }
 
-  const photoName = crypto.randomUUID() + ".jpg";
-  const photoPath = "public/" + photoName;
+      const photoPath = "public/" + crypto.randomUUID() + ".jpg";
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
+      let upload;
 
+      try {
+        upload = await fetch(
+          SUPABASE_URL + "/storage/v1/object/advert-photos/" + photoPath,
+          {
+            method: "POST",
+            headers: {
+              apikey: SUPABASE_KEY,
+              Authorization: "Bearer " + SUPABASE_KEY,
+              "Content-Type": "image/jpeg"
+            },
+            body: photoFile,
+            signal: controller.signal
+          }
+        );
+      } finally {
+        clearTimeout(timeout);
+      }
 
-const controller = new AbortController();
-const timeout = setTimeout(() => controller.abort(), 30000);
+      if (!upload.ok) {
+        throw new Error("Photo upload failed: " + await upload.text());
+      }
 
-const upload = await fetch(
+      photoUrl = SUPABASE_URL +
+        "/storage/v1/object/public/advert-photos/" + photoPath;
+    }
 
-SUPABASE_URL + "/storage/v1/object/advert-photos/" + photoPath,
-    {
-      method: "POST",
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: "Bearer " + SUPABASE_KEY,
-        "Content-Type": "image/jpeg"
-      },
-      signal: controller.signal,
-body: photoFile
-}
-  );
-clearTimeout(timeout);
+    const ad = {
+      title: title,
+      category: $("category").value,
+      price: $("price").value.trim(),
+      town: $("town").value.trim(),
+      contact: phone,
+      description: description,
+      photo_url: photoUrl
+    };
 
-  if (!upload.ok) throw new Error(await upload.text());
-
-  photoUrl = SUPABASE_URL +
-    "/storage/v1/object/public/advert-photos/" + photoPath;
-}
-let photoUrl = null;
- const ad = {
-    title: $("title").value.trim(),
-    category: $("category").value,
-    price: $("price").value.trim(),
-    town: $("town").value.trim(),
-    contact: $("phone").value.trim(),
-    description: $("description").value.trim(),photo_url: photoUrl
-  }; 
-
-const response = await fetch(SUPABASE_URL + "/rest/v1/Adverts", {
-      method: "POST",
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: "Bearer " + SUPABASE_KEY,
-        "Content-Type": "application/json",
-        Prefer: "return=representation"
-      },
-      body: JSON.stringify(ad)
-    });
+    const response = await fetch(
+      SUPABASE_URL + "/rest/v1/Adverts",
+      {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: "Bearer " + SUPABASE_KEY,
+          "Content-Type": "application/json",
+          Prefer: "return=representation"
+        },
+        body: JSON.stringify(ad)
+      }
+    );
 
     if (!response.ok) {
-      const details = await response.text();
-console.log("SUPABASE ERROR:", details);
-      throw new Error(details);
+      throw new Error("Advert save failed: " + await response.text());
     }
 
     $("formMessage").textContent = "Advert published successfully!";
     $("adForm").reset();
+
     selectedCategory = "";
     $("filterCategory").value = "";
+
     await loadAdverts();
     $("ads").scrollIntoView({ behavior: "smooth" });
-  $("formMessage").textContent =
-  "Publishing failed: " + (error.message || String(error));
+
+  } catch (error) {
+    $("formMessage").textContent =
+      "Publishing failed: " + (error.message || String(error));
+
   } finally {
     button.disabled = false;
     button.textContent = "Publish advert";
   }
-}); 
+});
 
 $("search").addEventListener("input", renderAdverts);
 
