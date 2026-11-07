@@ -198,10 +198,7 @@ async function loadAdverts() {
     );
 
     
-if (!upload.ok) {
-  const errorText = await upload.text();
-  throw new Error("Photo upload failed: " + errorText);
-}
+if (!response.ok) throw new Error(await response.text());
     allAdverts = (await response.json()).map(normalise);
     renderAdverts();
   } catch (error) {
