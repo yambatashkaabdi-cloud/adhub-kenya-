@@ -467,28 +467,7 @@ $("featureBtn").addEventListener("click", async () => {
   );
 
   if (!found) {
-    $("featureMessage").textContent = "Advert title not found.";
-    return;
-  }
-
-  try {
-    const requests = JSON.parse(
-      localStorage.getItem(REQUEST_KEY) || "[]"
-    );
-
-    requests.push({
-      title: title.trim(),
-      requestedAt: new Date().toISOString(),
-      status: "pending"
-    });
-
-    localStorage.setItem(REQUEST_KEY, JSON.stringify(requests));
-    $("featureMessage").textContent =
-      "Request saved on this device. No payment was taken.";
-  } catch (error) {
-    $("featureMessage").textContent = "Could not save your request.";
-  }
-});
+    
 
 loadAdverts();
 
