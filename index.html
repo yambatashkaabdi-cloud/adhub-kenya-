@@ -401,8 +401,60 @@ document.querySelectorAll("[data-cat]").forEach(button => {
   });
 });
 
-$("featureBtn").addEventListener("click", () => {
+$("featureBtn").addEventListener("click", async () => {
   if (!allAdverts.length) {
+    $("featureMessage").textContent = "Post an advert first.";
+    return;
+  }
+
+  const title = prompt("Enter the exact title of the advert to promote:");
+  if (!title) return;
+
+  const found = allAdverts.find(ad =>
+    ad.title.toLowerCase() === title.trim().toLowerCase()
+  );
+
+  if (!found) {
+    $("featureMessage").textContent = "Advert title not found.";
+    return;
+  }
+
+  const button = $("featureBtn");
+  button.disabled = true;
+  $("featureMessage").textContent = "Sending request...";
+
+  try {
+    const response = await fetch(
+      SUPABASE_URL + "/rest/v1/FeatureRequests",
+      {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: "Bearer " + SUPABASE_KEY,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal"
+        },
+        body: JSON.stringify({
+          advert_id: found.id
+        })
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    $("featureMessage").textContent =
+      "Request submitted successfully! Awaiting manual review. No payment was taken.";
+
+  } catch (error) {
+    $("featureMessage").textContent =
+      "Request failed: " + error.message;
+
+  } finally {
+    button.disabled = false;
+  }
+});
     $("featureMessage").textContent = "Post an advert first.";
     return;
   }
