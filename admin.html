@@ -116,7 +116,7 @@ async function loadRequests() {
 
   try {
     const url = SUPABASE_URL +
-      "/rest/v1/FeatureRequests?select=id,advert_id,requested_at,status,Adverts(title,town)" +
+      "/rest/v1/FeatureRequests?select=id,advert_id,requested_at,status,whatsapp_number,Adverts(title,town)" +
       "&status=eq.pending&order=requested_at.desc";
 
     const response = await fetch(url, {
