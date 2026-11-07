@@ -165,7 +165,7 @@ whatsapp.textContent = "Customer WhatsApp: " +
       approve.onclick = () => decide(item, "approved", approve, reject);
       reject.onclick = () => decide(item, "rejected", reject, approve);
 
-      card.append(heading, details, approve, reject);
+     card.append(heading, details, whatsapp, approve, reject);
       $("requests").append(card);
     });
 
